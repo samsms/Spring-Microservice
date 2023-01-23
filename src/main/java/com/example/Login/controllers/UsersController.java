@@ -12,6 +12,10 @@ import java.util.Map;
 
 import com.example.Login.util.JWTUtility;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +29,8 @@ public class UsersController {
 
     @Autowired
     JWTUtility jwtUtility;
+    @Autowired
+    AuthenticationManager authenticationManager;
     @PostMapping("auth/register")
     public Object register(@RequestBody UserRegDto userRegDto){
       if(usersService.createUser(userRegDto)){
@@ -35,19 +41,39 @@ public class UsersController {
       }
     }
     @PostMapping("auth/login")
-    public Object Login(@RequestBody LoginDto loginDto){
+    public Object Login(@RequestBody LoginDto loginDto) throws Exception{
 
-       if(usersService.Login(loginDto)){
-          String token= jwtUtility.generateToken(usersService.loadUserByUsername(loginDto.getUsername()));
+        try{
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                    loginDto.getUsername(),loginDto.getPassword()
+            ));
+        }catch (AuthenticationException e){
+            return error("false","Login failed! Wrong username or password !");
+        }
+        String token= jwtUtility.generateToken(usersService.loadUserByUsername(loginDto.getUsername()));
 
-            Map map=new HashMap();
-           map.put("token", token);
+        Map map=new HashMap();
+        map.put("token", token);
 
-           return ok("true", "Login Successful",map);
-       }
-       else{
-           return error("false","Login failed! Wrong username or password !");
-       }
+        return ok("true", "Login Successful",map);
+//
+//throw  new Exception("Invalid");
+
+
+
+
+
+//       if(usersService.Login(loginDto)){
+//          String token= jwtUtility.generateToken(usersService.loadUserByUsername(loginDto.getUsername()));
+//
+//            Map map=new HashMap();
+//           map.put("token", token);
+//
+//           return ok("true", "Login Successful",map);
+//       }
+//       else{
+//
+//       }
 
 
     }
